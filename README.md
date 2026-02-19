@@ -2,9 +2,16 @@
 
 Lightweight Vue 3 Single File Component (SFC) support for the Fresh editor.
 
+## Why this package exists
+
+Fresh currently supports syntect-compatible grammars.
+Most Vue grammars rely on advanced Sublime/TextMate features and fail to parse.
+
 This is intentionally a **syntect-compatible basic grammar** optimised for Fresh.
 It avoids advanced Sublime/TextMate constructs (`extends`, injections, etc.)
 that Fresh currently cannot parse reliably.
+
+This package provides **stable, Fresh-native Vue highlighting** without dependencies.
 
 ## Features
 
