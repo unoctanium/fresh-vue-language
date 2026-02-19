@@ -1,21 +1,56 @@
 # Vue Language Pack for Fresh Editor
 
-Provides:
+Lightweight Vue 3 Single File Component (SFC) support for the Fresh editor.
 
-- Vue 3 Single File Component basic syntax highlighting
-- `<script>` TypeScript / JavaScript highlighting
-- `<template>` Vue directive highlighting
-- Mustache interpolation support
-- Volar / vue-language-server integration
+## Features
 
-## Requirements
-
-Install Vue language server:
-
-npm i -g @vue/language-server typescript
+- Syntax highlighting for `.vue` files:
+  - `<script>` (TypeScript / JavaScript – lightweight tokenization)
+  - `<template>` (HTML + Vue directives + mustache `{{ ... }}`)
+  - `<style>` (basic CSS scope)
+- LSP integration via Volar (`vue-language-server`)
 
 ## Installation
 
-Fresh → Command Palette → Install from URL:
+## LSP Setup (Volar)
 
+Install the Vue language server globally:
+
+```bash
+npm i -g @vue/language-server typescript
+```
+
+Verify:
+    
+```bash
+which vue-language-server
+```
+
+### Vue Syntax from URL
+
+In Fresh: Command Palette → **Package: Install from URL**
+
+Use:
 https://github.com/unoctanium/fresh-vue-language
+
+Then quit / restart fresh
+
+## Notes / Limitations
+
+Fresh syntax highlighting is syntect-compatible, so grammars that rely on advanced Sublime features
+(e.g. extends) often fail to parse. This pack is intentionally self-contained.
+
+## Development
+
+Validate:
+    
+```bash
+./validate.sh
+```
+
+Test by installing from local path (recommended during development):
+- Command Palette → Package: Install from URL
+- Enter full path to the pack directory
+
+Then check logs / warnings inside Fresh.
+

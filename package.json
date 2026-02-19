@@ -1,25 +1,25 @@
 {
+  "$schema": "https://raw.githubusercontent.com/sinelaw/fresh/main/crates/fresh-editor/plugins/schemas/package.schema.json",
   "name": "vue",
   "version": "1.0.0",
+  "description": "Vue 3 Single File Component (SFC) language pack for Fresh: syntax highlighting + Volar LSP",
   "type": "language",
-  "description": "Vue 3 Single File Component (SFC) support for Fresh Editor",
-
   "author": "Odo Maletzki",
   "license": "MIT",
   "repository": "https://github.com/unoctanium/fresh-vue-language",
-
+  "keywords": ["vue", "vue3", "sfc", "volar", "typescript", "javascript", "frontend"],
   "fresh": {
     "grammar": {
       "file": "grammars/syntax.sublime-syntax",
       "extensions": ["vue"]
     },
-
     "language": {
       "commentPrefix": "//",
+      "blockCommentStart": "/*",
+      "blockCommentEnd": "*/",
       "tabSize": 2,
       "autoIndent": true
     },
-
     "lsp": {
       "command": "vue-language-server",
       "args": ["--stdio"],
