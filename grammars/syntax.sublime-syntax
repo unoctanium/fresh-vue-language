@@ -1,0 +1,354 @@
+%YAML 1.2
+---
+name: Vue (SFC)
+scope: source.vue
+file_extensions: [vue]
+version: 2
+
+contexts:
+  main:
+    - match: (?i)(<script)\b
+      captures:
+        1: entity.name.tag.html
+      push: script_tag
+
+    - match: (?i)(<template)\b
+      captures:
+        1: entity.name.tag.html
+      push: template_tag
+
+    - match: (?i)(<style)\b
+      captures:
+        1: entity.name.tag.html
+      push: style_tag
+
+    - include: html_misc
+
+  # -------------------------
+  # Generic HTML tag attrs (non-Vue)
+  # -------------------------
+  tag_attrs:
+    - match: \b([A-Za-z_:\-][\w:\-]*)\b
+      scope: entity.other.attribute-name.html
+    - match: =
+      scope: punctuation.separator.key-value.html
+
+    - match: '"'
+      scope: punctuation.definition.string.begin.html
+      push:
+        - meta_scope: string.quoted.double.html
+        - match: '"'
+          scope: punctuation.definition.string.end.html
+          pop: true
+        - match: \\.
+          scope: constant.character.escape
+        - match: '[^"\\]+'
+          scope: string.quoted.double.html
+
+    - match: "'"
+      scope: punctuation.definition.string.begin.html
+      push:
+        - meta_scope: string.quoted.single.html
+        - match: "'"
+          scope: punctuation.definition.string.end.html
+          pop: true
+        - match: \\.
+          scope: constant.character.escape
+        - match: "[^'\\\\]+"
+          scope: string.quoted.single.html
+
+    - match: \s+
+      scope: text.whitespace
+
+  # -------------------------
+  # Vue-specific attrs (directives + shorthands)
+  # -------------------------
+  vue_tag_attrs:
+    # v- directives, :bind shorthand, @on shorthand
+    - match: \b(v-[\w:-]+|:[\w:-]+|@[\w:-]+)\b
+      scope: entity.other.attribute-name.vue
+
+    - match: \b([A-Za-z_:\-][\w:\-]*)\b
+      scope: entity.other.attribute-name.html
+
+    - match: =
+      scope: punctuation.separator.key-value.html
+
+    # Double-quoted attribute value: allow JS/TS but DO NOT start double-quote strings inside (so we don’t eat the closing ")
+    - match: '"'
+      scope: punctuation.definition.string.begin.html
+      push:
+        - meta_scope: string.quoted.double.html
+        - match: '"'
+          scope: punctuation.definition.string.end.html
+          pop: true
+        - include: ts_expr_in_dq
+
+    # Single-quoted attribute value: allow JS/TS but DO NOT start single-quote strings inside (so we don’t eat the closing ')
+    - match: "'"
+      scope: punctuation.definition.string.begin.html
+      push:
+        - meta_scope: string.quoted.single.html
+        - match: "'"
+          scope: punctuation.definition.string.end.html
+          pop: true
+        - include: ts_expr_in_sq
+
+    - match: \s+
+      scope: text.whitespace
+
+  # -------------------------
+  # <script ...> ... </script>
+  # -------------------------
+  script_tag:
+    - include: tag_attrs
+    - match: '>'
+      scope: punctuation.definition.tag.end.html
+      set: script_body
+
+  script_body:
+    - meta_scope: source.ts
+    - match: (?i)</script\s*>
+      scope: entity.name.tag.html
+      pop: true
+    - include: ts_lex
+
+  # -------------------------
+  # Minimal TS/JS lexer (general)
+  # -------------------------
+  ts_lex:
+    - include: ts_comments
+    - include: ts_strings
+    - include: ts_core
+    - match: \s+
+      scope: text.whitespace
+    - match: .|\n
+      scope: source.ts
+
+  # Reusable pieces
+  ts_comments:
+    - match: //
+      scope: punctuation.definition.comment.ts
+      push:
+        - meta_scope: comment.line.double-slash.ts
+        - match: \n
+          pop: true
+        - match: .+
+          scope: comment.line.double-slash.ts
+    - match: /\*
+      scope: punctuation.definition.comment.begin.ts
+      push:
+        - meta_scope: comment.block.ts
+        - match: \*/
+          scope: punctuation.definition.comment.end.ts
+          pop: true
+        - match: .|\n
+          scope: comment.block.ts
+
+  ts_strings:
+    - match: "'"
+      scope: punctuation.definition.string.begin.ts
+      push:
+        - meta_scope: string.quoted.single.ts
+        - match: "'"
+          scope: punctuation.definition.string.end.ts
+          pop: true
+        - match: \\.
+          scope: constant.character.escape.ts
+        - match: "[^'\\\\]+"
+          scope: string.quoted.single.ts
+
+    - match: '"'
+      scope: punctuation.definition.string.begin.ts
+      push:
+        - meta_scope: string.quoted.double.ts
+        - match: '"'
+          scope: punctuation.definition.string.end.ts
+          pop: true
+        - match: \\.
+          scope: constant.character.escape.ts
+        - match: '[^"\\]+'
+          scope: string.quoted.double.ts
+
+    - match: '`'
+      scope: punctuation.definition.string.begin.ts
+      push:
+        - meta_scope: string.quoted.other.backtick.ts
+        - match: '`'
+          scope: punctuation.definition.string.end.ts
+          pop: true
+        - match: \\.
+          scope: constant.character.escape.ts
+        - match: .|\n
+          scope: string.quoted.other.backtick.ts
+
+  ts_core:
+    - match: \b(async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|if|implements|import|in|instanceof|interface|let|new|null|of|private|protected|public|return|static|super|switch|this|throw|try|type|typeof|undefined|var|void|while|with|yield)\b
+      scope: keyword.control.ts
+    - match: \b(true|false)\b
+      scope: constant.language.boolean.ts
+    - match: \b\d+(\.\d+)?\b
+      scope: constant.numeric.ts
+    - match: (\+\+|--|=>|===|!==|==|!=|<=|>=|\|\||&&|[=+\-*/%<>!?.,:;()\[\]{}])
+      scope: punctuation.operator.ts
+    - match: \b[A-Za-z_$][\w$]*\b
+      scope: variable.other.ts
+
+  # TS expression inside a double-quoted HTML attribute value:
+  # allow comments, backticks, and SINGLE quotes, but not "..."
+  ts_expr_in_dq:
+    - include: ts_comments
+    - match: "'"
+      scope: punctuation.definition.string.begin.ts
+      push:
+        - meta_scope: string.quoted.single.ts
+        - match: "'"
+          scope: punctuation.definition.string.end.ts
+          pop: true
+        - match: \\.
+          scope: constant.character.escape.ts
+        - match: "[^'\\\\]+"
+          scope: string.quoted.single.ts
+    - match: '`'
+      scope: punctuation.definition.string.begin.ts
+      push:
+        - meta_scope: string.quoted.other.backtick.ts
+        - match: '`'
+          scope: punctuation.definition.string.end.ts
+          pop: true
+        - match: \\.
+          scope: constant.character.escape.ts
+        - match: .|\n
+          scope: string.quoted.other.backtick.ts
+    - include: ts_core
+    - match: '[^"]+'
+      scope: source.ts
+
+  # TS expression inside a single-quoted HTML attribute value:
+  # allow comments, backticks, and DOUBLE quotes, but not '...'
+  ts_expr_in_sq:
+    - include: ts_comments
+    - match: '"'
+      scope: punctuation.definition.string.begin.ts
+      push:
+        - meta_scope: string.quoted.double.ts
+        - match: '"'
+          scope: punctuation.definition.string.end.ts
+          pop: true
+        - match: \\.
+          scope: constant.character.escape.ts
+        - match: '[^"\\]+'
+          scope: string.quoted.double.ts
+    - match: '`'
+      scope: punctuation.definition.string.begin.ts
+      push:
+        - meta_scope: string.quoted.other.backtick.ts
+        - match: '`'
+          scope: punctuation.definition.string.end.ts
+          pop: true
+        - match: \\.
+          scope: constant.character.escape.ts
+        - match: .|\n
+          scope: string.quoted.other.backtick.ts
+    - include: ts_core
+    - match: "[^']+"
+      scope: source.ts
+
+  # -------------------------
+  # <template ...> ... </template>
+  # -------------------------
+  template_tag:
+    - include: vue_tag_attrs
+    - match: '>'
+      scope: punctuation.definition.tag.end.html
+      set: template_body
+
+  template_body:
+    - meta_scope: text.html.vue
+    - include: vue_mustache
+    - include: vue_html_tags
+    - include: html_misc
+    - match: (?i)</template\s*>
+      scope: entity.name.tag.html
+      pop: true
+
+  # Proper tag parsing in template (so attributes get parsed + colored)
+  vue_html_tags:
+    - match: (?i)</
+      scope: punctuation.definition.tag.begin.html
+      push: vue_close_tag
+
+    - match: (?i)<
+      scope: punctuation.definition.tag.begin.html
+      push: vue_open_tag
+
+  vue_open_tag:
+    - match: (?i)\b([A-Za-z][\w:-]*)\b
+      scope: entity.name.tag.html
+      set: vue_open_tag_after_name
+
+  vue_open_tag_after_name:
+    - include: vue_tag_attrs
+    - match: />
+      scope: punctuation.definition.tag.end.html
+      pop: true
+    - match: '>'
+      scope: punctuation.definition.tag.end.html
+      pop: true
+
+  vue_close_tag:
+    - match: (?i)\b([A-Za-z][\w:-]*)\b
+      scope: entity.name.tag.html
+      set: vue_close_tag_end
+    - match: '>'
+      scope: punctuation.definition.tag.end.html
+      pop: true
+
+  vue_close_tag_end:
+    - match: '>'
+      scope: punctuation.definition.tag.end.html
+      pop: true
+
+  # Vue mustache {{ ... }} with tokenization
+  vue_mustache:
+    - match: '{{'
+      scope: punctuation.section.embedded.begin.vue
+      push:
+        - meta_scope: source.js.embedded.vue
+        - match: '}}'
+          scope: punctuation.section.embedded.end.vue
+          pop: true
+        - include: ts_lex
+
+  # -------------------------
+  # <style ...> ... </style>
+  # -------------------------
+  style_tag:
+    - include: tag_attrs
+    - match: '>'
+      scope: punctuation.definition.tag.end.html
+      set: style_body
+
+  style_body:
+    - meta_scope: source.css
+    - match: (?i)</style\s*>
+      scope: entity.name.tag.html
+      pop: true
+    - match: .|\n
+      scope: source.css
+
+  # -------------------------
+  # Basic HTML misc
+  # -------------------------
+  html_misc:
+    - match: <!--
+      scope: punctuation.definition.comment.begin.html
+      push:
+        - meta_scope: comment.block.html
+        - match: -->
+          scope: punctuation.definition.comment.end.html
+          pop: true
+        - match: .|\n
+          scope: comment.block.html
+          
+          

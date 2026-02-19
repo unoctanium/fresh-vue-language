@@ -1,0 +1,29 @@
+{
+  "name": "vue",
+  "version": "1.0.0",
+  "type": "language",
+  "description": "Vue 3 Single File Component (SFC) support for Fresh Editor",
+
+  "author": "Odo Maletzki",
+  "license": "MIT",
+  "repository": "https://github.com/unoctanium/fresh-vue-language",
+
+  "fresh": {
+    "grammar": {
+      "file": "grammars/syntax.sublime-syntax",
+      "extensions": ["vue"]
+    },
+
+    "language": {
+      "commentPrefix": "//",
+      "tabSize": 2,
+      "autoIndent": true
+    },
+
+    "lsp": {
+      "command": "vue-language-server",
+      "args": ["--stdio"],
+      "autoStart": true
+    }
+  }
+}
