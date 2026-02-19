@@ -1,6 +1,6 @@
 %YAML 1.2
 ---
-name: Vue (SFC)
+name: Vue (SFC Basic)
 scope: source.vue
 file_extensions: [vue]
 version: 2
@@ -25,11 +25,12 @@ contexts:
     - include: html_misc
 
   # -------------------------
-  # Generic HTML tag attrs (non-Vue)
+  # Generic HTML attribute parsing
   # -------------------------
   tag_attrs:
     - match: \b([A-Za-z_:\-][\w:\-]*)\b
       scope: entity.other.attribute-name.html
+
     - match: =
       scope: punctuation.separator.key-value.html
 
@@ -61,20 +62,38 @@ contexts:
       scope: text.whitespace
 
   # -------------------------
-  # Vue-specific attrs (directives + shorthands)
+  # Vue directive attributes + shorthands
   # -------------------------
   vue_tag_attrs:
-    # v- directives, :bind shorthand, @on shorthand
-    - match: \b(v-[\w:-]+|:[\w:-]+|@[\w:-]+)\b
+    # Vue directives, bind/on shorthands, slot shorthand
+    - match: \b(v-[\w:-]+|:[\w:-]+|@[\w:-]+|#[-\w]+)\b
       scope: entity.other.attribute-name.vue
 
+    # Special-case: v-slot (and v-slot:foo)
+    - match: \b(v-slot(?::[-\w]+)?)\b
+      scope: entity.other.attribute-name.vue
+
+    # Normal HTML attributes
     - match: \b([A-Za-z_:\-][\w:\-]*)\b
       scope: entity.other.attribute-name.html
 
     - match: =
       scope: punctuation.separator.key-value.html
 
-    # Double-quoted attribute value: allow JS/TS but DO NOT start double-quote strings inside (so we don’t eat the closing ")
+    # class="..." -> Tailwind-ish token highlighting (safe heuristic)
+    - match: (?i)(class)\s*(=)\s*"
+      captures:
+        1: entity.other.attribute-name.html
+        2: punctuation.separator.key-value.html
+      push: class_value_double
+
+    - match: (?i)(class)\s*(=)\s*'
+      captures:
+        1: entity.other.attribute-name.html
+        2: punctuation.separator.key-value.html
+      push: class_value_single
+
+    # Double-quoted directive/attr values: allow TS expression tokenization
     - match: '"'
       scope: punctuation.definition.string.begin.html
       push:
@@ -84,7 +103,7 @@ contexts:
           pop: true
         - include: ts_expr_in_dq
 
-    # Single-quoted attribute value: allow JS/TS but DO NOT start single-quote strings inside (so we don’t eat the closing ')
+    # Single-quoted directive/attr values: allow TS expression tokenization
     - match: "'"
       scope: punctuation.definition.string.begin.html
       push:
@@ -96,6 +115,36 @@ contexts:
 
     - match: \s+
       scope: text.whitespace
+
+  # Tailwind-ish tokenization within class=""
+  class_value_double:
+    - meta_scope: string.quoted.double.html
+    - match: '"'
+      scope: punctuation.definition.string.end.html
+      pop: true
+    - match: \\.
+      scope: constant.character.escape
+    # token (heuristic): supports e.g. md:hover:bg-red-500, w-1/2, bg-[#fff]
+    - match: '[A-Za-z0-9_\-:/\[\]#.%()+]+'
+      scope: support.class.tailwind.vue
+    - match: \s+
+      scope: text.whitespace
+    - match: .
+      scope: string.quoted.double.html
+
+  class_value_single:
+    - meta_scope: string.quoted.single.html
+    - match: "'"
+      scope: punctuation.definition.string.end.html
+      pop: true
+    - match: \\.
+      scope: constant.character.escape
+    - match: '[A-Za-z0-9_\-:/\[\]#.%()+]+'
+      scope: support.class.tailwind.vue
+    - match: \s+
+      scope: text.whitespace
+    - match: .
+      scope: string.quoted.single.html
 
   # -------------------------
   # <script ...> ... </script>
@@ -114,7 +163,7 @@ contexts:
     - include: ts_lex
 
   # -------------------------
-  # Minimal TS/JS lexer (general)
+  # Minimal TS/JS lexer (syntect-safe)
   # -------------------------
   ts_lex:
     - include: ts_comments
@@ -125,7 +174,6 @@ contexts:
     - match: .|\n
       scope: source.ts
 
-  # Reusable pieces
   ts_comments:
     - match: //
       scope: punctuation.definition.comment.ts
@@ -135,6 +183,7 @@ contexts:
           pop: true
         - match: .+
           scope: comment.line.double-slash.ts
+
     - match: /\*
       scope: punctuation.definition.comment.begin.ts
       push:
@@ -185,12 +234,16 @@ contexts:
   ts_core:
     - match: \b(async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|if|implements|import|in|instanceof|interface|let|new|null|of|private|protected|public|return|static|super|switch|this|throw|try|type|typeof|undefined|var|void|while|with|yield)\b
       scope: keyword.control.ts
+
     - match: \b(true|false)\b
       scope: constant.language.boolean.ts
+
     - match: \b\d+(\.\d+)?\b
       scope: constant.numeric.ts
+
     - match: (\+\+|--|=>|===|!==|==|!=|<=|>=|\|\||&&|[=+\-*/%<>!?.,:;()\[\]{}])
       scope: punctuation.operator.ts
+
     - match: \b[A-Za-z_$][\w$]*\b
       scope: variable.other.ts
 
@@ -198,6 +251,7 @@ contexts:
   # allow comments, backticks, and SINGLE quotes, but not "..."
   ts_expr_in_dq:
     - include: ts_comments
+
     - match: "'"
       scope: punctuation.definition.string.begin.ts
       push:
@@ -209,6 +263,7 @@ contexts:
           scope: constant.character.escape.ts
         - match: "[^'\\\\]+"
           scope: string.quoted.single.ts
+
     - match: '`'
       scope: punctuation.definition.string.begin.ts
       push:
@@ -220,6 +275,7 @@ contexts:
           scope: constant.character.escape.ts
         - match: .|\n
           scope: string.quoted.other.backtick.ts
+
     - include: ts_core
     - match: '[^"]+'
       scope: source.ts
@@ -228,6 +284,7 @@ contexts:
   # allow comments, backticks, and DOUBLE quotes, but not '...'
   ts_expr_in_sq:
     - include: ts_comments
+
     - match: '"'
       scope: punctuation.definition.string.begin.ts
       push:
@@ -239,6 +296,7 @@ contexts:
           scope: constant.character.escape.ts
         - match: '[^"\\]+'
           scope: string.quoted.double.ts
+
     - match: '`'
       scope: punctuation.definition.string.begin.ts
       push:
@@ -250,6 +308,7 @@ contexts:
           scope: constant.character.escape.ts
         - match: .|\n
           scope: string.quoted.other.backtick.ts
+
     - include: ts_core
     - match: "[^']+"
       scope: source.ts
@@ -272,18 +331,22 @@ contexts:
       scope: entity.name.tag.html
       pop: true
 
-  # Proper tag parsing in template (so attributes get parsed + colored)
+  # Proper tag parsing in template
   vue_html_tags:
     - match: (?i)</
       scope: punctuation.definition.tag.begin.html
       push: vue_close_tag
-
     - match: (?i)<
       scope: punctuation.definition.tag.begin.html
       push: vue_open_tag
 
   vue_open_tag:
-    - match: (?i)\b([A-Za-z][\w:-]*)\b
+    # Component tags (PascalCase)
+    - match: (?i)\b([A-Z][\w:-]*)\b
+      scope: entity.name.tag.component.vue
+      set: vue_open_tag_after_name
+    # Normal tags
+    - match: (?i)\b([a-z][\w:-]*)\b
       scope: entity.name.tag.html
       set: vue_open_tag_after_name
 
@@ -297,7 +360,12 @@ contexts:
       pop: true
 
   vue_close_tag:
-    - match: (?i)\b([A-Za-z][\w:-]*)\b
+    # Component close tag
+    - match: (?i)\b([A-Z][\w:-]*)\b
+      scope: entity.name.tag.component.vue
+      set: vue_close_tag_end
+    # Normal close tag
+    - match: (?i)\b([a-z][\w:-]*)\b
       scope: entity.name.tag.html
       set: vue_close_tag_end
     - match: '>'
@@ -350,5 +418,8 @@ contexts:
           pop: true
         - match: .|\n
           scope: comment.block.html
-          
-          
+
+    - match: </?\w[\w:-]*\b
+      scope: entity.name.tag.html
+      
+      
