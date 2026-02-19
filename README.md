@@ -1,6 +1,10 @@
-# Vue Language Pack for Fresh Editor
+# Vue SFC Basic Language Pack for Fresh Editor
 
 Lightweight Vue 3 Single File Component (SFC) support for the Fresh editor.
+
+This is intentionally a **syntect-compatible basic grammar** optimised for Fresh.
+It avoids advanced Sublime/TextMate constructs (`extends`, injections, etc.)
+that Fresh currently cannot parse reliably.
 
 ## Features
 
