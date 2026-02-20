@@ -2,6 +2,14 @@
 
 Lightweight Vue 3 Single File Component (SFC) support for the Fresh editor.
 
+## Preview 1: Vue SFC Highlighting
+
+![Vue SFC Highlighting](screenshots/GrammarTest.png)
+
+## Preview 2: Package installation page
+
+![Vue SFC Package installes](screenshots/LanguagePack.png)
+ 
 ## Why this package exists
 
 Fresh currently supports syntect-compatible grammars.
