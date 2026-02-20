@@ -31,7 +31,7 @@ This package provides **stable, Fresh-native Vue highlighting** without dependen
 
 ## Installation
 
-## LSP Setup (Volar)
+### LSP Setup (Volar)
 
 Install the Vue language server globally:
 
